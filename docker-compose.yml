@@ -1,0 +1,72 @@
+services:
+  db:
+    container_name: besy-postgres
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    #volumes:
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      - POSTGRES_USER=besy
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=besy
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./migrated-init-database.sh:/docker-entrypoint-initdb.d/init-user-db.sh
+    networks:
+      - internal
+
+  backend:
+    container_name: besy-backend
+    image: xthroin/throin:besy-latest
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://besy-postgres:5432/besy
+      - POSTGRES_USERNAME=besy
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DATABASE=besy
+      - SPRING_PROFILES_ACTIVE=production
+      - BESY_FRONTEND_URL=https://test.besy.hs-esslingen.com
+      - ALLOWED_ORIGIN="https://$APP_URL"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.$APP_NAME.entrypoints=websecure"
+      - "traefik.http.routers.$APP_NAME.rule=Host(`api.$APP_URL`)"
+      - "traefik.http.routers.$APP_NAME.tls.certresolver=letsencrypt"
+      - "traefik.http.services.$APP_NAME.loadbalancer.server.port=$APP_PORT"
+    networks:
+      - traefik
+      - internal
+    depends_on:
+      - db
+
+  pgadmin:
+    container_name: besy-pgadmin
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.de
+      - PGADMIN_DEFAULT_PASSWORD=cjwepmvejrimcgesiogjcrlseeyvgi
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${APP_NAME}-pgadmin.entrypoints=websecure"
+      - "traefik.http.routers.${APP_NAME}-pgadmin.rule=Host(`pgadmin.$APP_URL`)"
+      - "traefik.http.routers.${APP_NAME}-pgadmin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${APP_NAME}-pgadmin.loadbalancer.server.port=80"
+    depends_on:
+      - db
+    networks:
+      - traefik
+      - internal
+
+
+networks:
+  traefik:
+    external: true
+  internal:
+    external: false
