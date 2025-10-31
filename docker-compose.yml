@@ -33,7 +33,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DATABASE=${DB}
       - SPRING_PROFILES_ACTIVE=production
-      - BESY_FRONTEND_URL=${APP_URL}
+      - BESY_FRONTEND_URL="https://${APP_URL}"
       - SERVER_PORT=${APP_PORT}
       - API_PREFIX=""
     labels:
