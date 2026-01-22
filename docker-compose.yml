@@ -33,9 +33,9 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DATABASE=${DB}
       - SPRING_PROFILES_ACTIVE=production
-      - BESY_FRONTEND_URL="https://${APP_URL}"
+      - BESY_FRONTEND_URL=https://${APP_URL}
       - SERVER_PORT=${APP_PORT}
-      - API_PREFIX=""
+      - API_PREFIX=${API_PREFIX-/api/v1}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${APP_NAME}.entrypoints=websecure"
